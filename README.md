@@ -7,7 +7,8 @@ Publicado em https://spidermanmfs.github.io/apuracao2026/ — também funciona a
 
 ## O que mostra
 
-- Abre na visão Brasil (Presidente), com mosaico dos estados colorido pelo líder e tabela por estado.
+- Abre na visão Brasil (Presidente), com mapa do Brasil colorido por quem lidera em cada estado (ou pelo andamento) e tabela por estado.
+- Barra de estados agrupada por região: clique num estado (na barra ou no mapa) para ver só ele, com zoom no mapa.
 - Escolha um estado (ou Exterior) para ver Governador, Senador, Deputado Federal e Estadual/Distrital, e os municípios.
 - Seções totalizadas, eleitorado, comparecimento e abstenção.
 - Composição dos votos: válidos, brancos, nulos e anulados sub judice.
@@ -29,3 +30,5 @@ Publicado em https://spidermanmfs.github.io/apuracao2026/ — também funciona a
 | Fotos | `<ele>/fotos/<sp ou br>/<sqcand>.jpeg` |
 
 Cargos: 1 Presidente, 3 Governador, 5 Senador, 6 Dep. Federal, 7 Dep. Estadual, 8 Dep. Distrital (DF).
+
+Contornos dos estados: [click_that_hood](https://github.com/codeforgermany/click_that_hood) (base IBGE), simplificados e embutidos no HTML.
