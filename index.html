@@ -1,0 +1,931 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Apuração SP 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,500..800&family=Public+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: painel operacional — barra fixa com cargo/abrangência, faixa de andamento, ranking + evolução lado a lado, municípios embaixo. */
+:root {
+  --bg: #f3f5f8;
+  --surface: #ffffff;
+  --surface-2: #eef1f5;
+  --ink: #0f1722;
+  --ink-2: #4a5566;
+  --muted: #7a8698;
+  --line: #dbe1e9;
+  --accent: #1c5cab;
+  --accent-soft: #b7d3f6;
+  --good: #137a3a;
+  --good-bg: #dcf2e3;
+  --warn: #a35a00;
+  --warn-bg: #fdecc8;
+  --bad: #b42323;
+  --bad-bg: #fbe0e0;
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100; --s5: #e87ba4; --s6: #008300;
+  --seq-0: #e6eef9; --seq-1: #b7d3f6; --seq-2: #86b6ef; --seq-3: #5598e7; --seq-4: #2a78d6; --seq-5: #1c5cab; --seq-6: #0d366b;
+  --font-display: "Archivo", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  --font-body: "Public Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --radius: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e131a; --surface: #161d27; --surface-2: #1d2632; --ink: #eef2f7; --ink-2: #b6c0ce; --muted: #8592a5; --line: #2a3442;
+    --accent: #5598e7; --accent-soft: #1c3d66;
+    --good: #5fd08a; --good-bg: #123522; --warn: #f2b453; --warn-bg: #3a2a0e; --bad: #f08a8a; --bad-bg: #3c1717;
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181; --s6: #008300;
+    --seq-0: #1d2632; --seq-1: #184f95; --seq-2: #1c5cab; --seq-3: #2a78d6; --seq-4: #5598e7; --seq-5: #86b6ef; --seq-6: #cde2fb;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e131a; --surface: #161d27; --surface-2: #1d2632; --ink: #eef2f7; --ink-2: #b6c0ce; --muted: #8592a5; --line: #2a3442;
+  --accent: #5598e7; --accent-soft: #1c3d66;
+  --good: #5fd08a; --good-bg: #123522; --warn: #f2b453; --warn-bg: #3a2a0e; --bad: #f08a8a; --bad-bg: #3c1717;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181; --s6: #008300;
+  --seq-0: #1d2632; --seq-1: #184f95; --seq-2: #1c5cab; --seq-3: #2a78d6; --seq-4: #5598e7; --seq-5: #86b6ef; --seq-6: #cde2fb;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg); color: var(--ink);
+  font: 15px/1.45 var(--font-body);
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+}
+button, input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ---------- barra superior ---------- */
+.topbar {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 10;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--line);
+}
+.topbar-inner, main { max-width: 1280px; margin: 0 auto; padding-inline: 16px; }
+.topbar-inner { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px; padding-block: 10px; }
+.brand { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
+.brand h1 {
+  margin: 0; font: 800 22px/1 var(--font-display); font-stretch: 80%;
+  letter-spacing: .01em; text-transform: uppercase;
+}
+.brand .uf { font: 600 12px/1 var(--font-body); color: var(--muted); letter-spacing: .08em; text-transform: uppercase; }
+.controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; flex: 1; }
+.seg { display: inline-flex; background: var(--surface-2); border-radius: 8px; padding: 3px; gap: 2px; flex-wrap: wrap; }
+.seg button {
+  border: 0; background: transparent; padding: 6px 11px; border-radius: 6px; cursor: pointer;
+  font-weight: 600; font-size: 13px; color: var(--ink-2);
+}
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgb(0 0 0 / .12); }
+.seg button:hover { color: var(--ink); }
+.abr { display: flex; gap: 6px; align-items: center; }
+.abr input {
+  width: 220px; max-width: 60vw; padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px;
+  background: var(--surface);
+}
+.abr button.clear { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 6px 10px; cursor: pointer; font-size: 13px; }
+.live { display: flex; align-items: center; gap: 10px; margin-left: auto; font-size: 12.5px; color: var(--ink-2); }
+.live .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--good); box-shadow: 0 0 0 0 var(--good); animation: pulse 2s infinite; }
+.live.err .dot { background: var(--bad); animation: none; }
+.live.paused .dot { background: var(--muted); animation: none; }
+@keyframes pulse { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--good) 60%, transparent); } 70% { box-shadow: 0 0 0 7px transparent; } 100% { box-shadow: 0 0 0 0 transparent; } }
+@media (prefers-reduced-motion: reduce) { .live .dot { animation: none; } * { transition: none !important; } }
+.live button { border: 1px solid var(--line); background: var(--surface); border-radius: 7px; padding: 5px 9px; cursor: pointer; font-size: 12.5px; font-weight: 600; }
+
+main { padding-block: 18px 48px; display: grid; gap: 18px; }
+
+.banner { border-radius: var(--radius); padding: 10px 14px; background: var(--bad-bg); color: var(--bad); font-weight: 600; font-size: 14px; }
+
+/* ---------- faixa de andamento ---------- */
+.status {
+  display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 18px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 20px;
+}
+.eyebrow { font-size: 11.5px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); margin: 0 0 6px; }
+.hero { display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
+.hero .big { font: 800 64px/0.9 var(--font-display); font-stretch: 75%; letter-spacing: -.01em; }
+.hero .big small { font-size: 32px; }
+.hero .label { font-size: 13px; color: var(--ink-2); padding-bottom: 6px; max-width: 26ch; }
+.progress { height: 10px; background: var(--surface-2); border-radius: 5px; overflow: hidden; margin: 14px 0 12px; }
+.progress > div { height: 100%; background: var(--accent); border-radius: 5px; transition: width .6s ease; }
+.kv { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px 16px; margin: 0; }
+.kv div { min-width: 0; }
+.kv dt { font-size: 12px; color: var(--muted); }
+.kv dd { margin: 2px 0 0; font-weight: 700; font-size: 15px; }
+.kv dd small { font-weight: 500; color: var(--ink-2); font-size: 12px; }
+
+.votes-comp .stack { display: flex; height: 26px; border-radius: 6px; overflow: hidden; gap: 2px; background: var(--surface); margin: 8px 0 12px; }
+.votes-comp .stack > span { display: block; height: 100%; min-width: 2px; }
+.votes-comp .stack > span:first-child { border-radius: 6px 0 0 6px; }
+.votes-comp .stack > span:last-child { border-radius: 0 6px 6px 0; }
+.legend { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 16px; margin: 0; padding: 0; list-style: none; }
+.legend li { display: grid; grid-template-columns: 12px 1fr auto; gap: 8px; align-items: baseline; font-size: 13.5px; }
+.legend .sw { width: 12px; height: 12px; border-radius: 3px; align-self: center; }
+.legend b { font-weight: 700; }
+.legend .pc { color: var(--ink-2); font-size: 12.5px; }
+.meta-line { font-size: 12.5px; color: var(--muted); margin-top: 12px; }
+.meta-line b { color: var(--ink-2); font-weight: 600; }
+
+/* ---------- grid principal ---------- */
+.cols { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px; min-width: 0; }
+.panel-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+.panel h2 { margin: 0; font: 750 19px/1.15 var(--font-display); font-stretch: 85%; text-wrap: balance; }
+.panel .sub { font-size: 12.5px; color: var(--muted); }
+
+/* ranking */
+.rank { list-style: none; margin: 0; padding: 0; display: grid; }
+.cand {
+  display: grid; grid-template-columns: 26px 44px minmax(0, 1fr) 104px; gap: 4px 12px; align-items: center;
+  padding: 10px 0; border-top: 1px solid var(--line);
+}
+.cand:first-child { border-top: 0; }
+.cand .pos { font: 700 15px/1 var(--font-display); color: var(--muted); text-align: right; }
+.cand .foto { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; background: var(--surface-2); grid-row: span 2; }
+.cand .pos { grid-row: span 2; }
+.cand .who { min-width: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; }
+.cand .who b { font-weight: 700; font-size: 15px; }
+.cand .who .n { font: 600 12px/1 var(--font-body); color: var(--ink-2); background: var(--surface-2); padding: 3px 6px; border-radius: 4px; }
+.cand .who small { width: 100%; color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cand .nums { text-align: right; grid-row: span 2; }
+.cand .nums .p { font: 800 22px/1 var(--font-display); font-stretch: 80%; }
+.cand .nums .v { font-size: 12px; color: var(--ink-2); display: block; margin-top: 3px; }
+.cand .meter { position: relative; height: 8px; background: var(--surface-2); border-radius: 4px; }
+.cand .meter > i { position: absolute; inset: 0 auto 0 0; background: var(--accent); border-radius: 0 4px 4px 0; transition: width .6s ease; }
+.cand.out .meter > i { background: color-mix(in srgb, var(--accent) 38%, var(--surface-2)); }
+.cand .meter > u { position: absolute; top: -4px; bottom: -4px; width: 0; border-left: 2px dashed var(--ink-2); }
+.cut { list-style: none; display: flex; align-items: center; gap: 10px; padding: 6px 0; font-size: 11.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
+.cut::before, .cut::after { content: ""; flex: 1; border-top: 2px dashed var(--line); }
+.chip { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 999px; letter-spacing: .02em; white-space: nowrap; }
+.chip.good { background: var(--good-bg); color: var(--good); }
+.chip.warn { background: var(--warn-bg); color: var(--warn); }
+.chip.bad { background: var(--bad-bg); color: var(--bad); }
+.chip.mute { background: var(--surface-2); color: var(--ink-2); }
+.more { margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.btn { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 7px 12px; cursor: pointer; font-weight: 600; font-size: 13px; }
+.btn:hover { border-color: var(--accent); color: var(--accent); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn.primary:hover { color: #fff; filter: brightness(1.08); }
+.btn[disabled] { opacity: .55; cursor: default; }
+.search { padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); min-width: 0; width: 220px; max-width: 100%; }
+
+/* partidos (proporcional) */
+.parties { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.parties th { text-align: left; font-size: 11.5px; color: var(--muted); font-weight: 700; letter-spacing: .05em; text-transform: uppercase; padding: 0 8px 6px 0; }
+.parties td { padding: 7px 8px 7px 0; border-top: 1px solid var(--line); vertical-align: middle; }
+.parties td.r, .parties th.r { text-align: right; }
+.seats { display: flex; gap: 2px; flex-wrap: wrap; max-width: 260px; }
+.seats i { width: 8px; height: 8px; border-radius: 2px; background: var(--accent); }
+
+/* evolução */
+.chart-wrap { position: relative; }
+.chart-wrap svg { display: block; width: 100%; height: auto; overflow: visible; }
+.chart-wrap .axis text, .chart-wrap .lbl { fill: var(--muted); font-size: 11px; font-family: var(--font-body); }
+.chart-wrap .grid line { stroke: var(--line); }
+.chart-legend { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 6px; }
+.chart-legend li { display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; gap: 8px; align-items: center; font-size: 13px; }
+.chart-legend .sw { height: 3px; border-radius: 2px; }
+.empty { color: var(--muted); font-size: 13.5px; padding: 18px 0; }
+.tip {
+  position: fixed; z-index: 30; pointer-events: none; background: var(--ink); color: var(--bg);
+  border-radius: 8px; padding: 8px 10px; font-size: 12.5px; line-height: 1.4; max-width: 260px;
+  box-shadow: 0 6px 20px rgb(0 0 0 / .2);
+}
+.tip b { font-weight: 700; }
+.tip .row { display: flex; justify-content: space-between; gap: 14px; }
+
+.side { display: grid; gap: 18px; min-width: 0; }
+.wins { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.wins li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; font-size: 13.5px; }
+.wins .bar { grid-column: 1 / -1; height: 6px; background: var(--surface-2); border-radius: 3px; }
+.wins .bar i { display: block; height: 100%; background: var(--accent); border-radius: 0 3px 3px 0; }
+
+/* municípios */
+.heat { display: grid; grid-template-columns: repeat(auto-fill, minmax(13px, 1fr)); gap: 2px; margin: 4px 0 8px; }
+.heat button { aspect-ratio: 1; max-width: 100%; border: 0; padding: 0; border-radius: 2px; cursor: pointer; background: var(--seq-0); }
+.heat button:hover, .heat button.sel { outline: 2px solid var(--ink); outline-offset: 0; }
+.scale { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); flex-wrap: wrap; }
+.scale .ramp { display: flex; gap: 2px; }
+.scale .ramp i { width: 22px; height: 10px; border-radius: 2px; }
+.table-wrap { overflow-x: auto; margin-top: 12px; max-height: 520px; overflow-y: auto; border-top: 1px solid var(--line); }
+.mt { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width: 640px; }
+.mt th { position: sticky; top: 0; background: var(--surface); text-align: left; font-size: 11.5px; color: var(--muted); font-weight: 700; letter-spacing: .05em; text-transform: uppercase; padding: 8px 10px 8px 0; cursor: pointer; white-space: nowrap; user-select: none; }
+.mt th.r, .mt td.r { text-align: right; }
+.mt th[aria-sort="ascending"]::after { content: " ▲"; }
+.mt th[aria-sort="descending"]::after { content: " ▼"; }
+.mt td { padding: 7px 10px 7px 0; border-top: 1px solid var(--line); }
+.mt tbody tr { cursor: pointer; }
+.mt tbody tr:hover td { background: var(--surface-2); }
+.mt .pbar { display: inline-block; width: 70px; height: 6px; background: var(--surface-2); border-radius: 3px; vertical-align: middle; margin-right: 8px; overflow: hidden; }
+.mt .pbar i { display: block; height: 100%; background: var(--accent); }
+
+footer { font-size: 12px; color: var(--muted); }
+footer a { color: var(--ink-2); }
+
+@media (max-width: 980px) {
+  .cols, .status { grid-template-columns: minmax(0, 1fr); }
+  .kv { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .live { margin-left: 0; width: 100%; flex-wrap: wrap; }
+  .topbar { position: static; }
+  .controls { width: 100%; flex: none; }
+  .seg { flex-wrap: nowrap; overflow-x: auto; max-width: 100%; }
+  .seg button { white-space: nowrap; flex: none; }
+}
+@media (max-width: 520px) {
+  .hero .big { font-size: 52px; }
+  .cand { grid-template-columns: 20px 36px minmax(0, 1fr) 84px; gap: 4px 8px; }
+  .cand .foto { width: 36px; height: 36px; }
+  .abr input { width: 100%; max-width: none; }
+  .abr { width: 100%; }
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <h1>Apuração 2026</h1>
+      <span class="uf" id="abr-label">São Paulo</span>
+    </div>
+    <div class="controls">
+      <div class="seg" role="group" aria-label="Cargo" id="cargos"></div>
+      <div class="abr">
+        <input id="mun-input" list="mun-list" placeholder="Filtrar município…" autocomplete="off" aria-label="Município">
+        <datalist id="mun-list"></datalist>
+        <button class="clear" id="mun-clear" type="button" hidden>Estado</button>
+      </div>
+    </div>
+    <div class="live" id="live">
+      <span class="dot" aria-hidden="true"></span>
+      <span id="live-text">Conectando ao TSE…</span>
+      <button type="button" id="refresh">Atualizar</button>
+      <button type="button" id="pause">Pausar</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="banner" id="banner" hidden></div>
+
+  <section class="status" aria-label="Andamento da apuração">
+    <div>
+      <p class="eyebrow" id="st-eyebrow">Seções totalizadas</p>
+      <div class="hero">
+        <div class="big" id="st-pct">–</div>
+        <div class="label" id="st-label">das urnas já entraram na contagem</div>
+      </div>
+      <div class="progress" aria-hidden="true"><div id="st-bar" style="width:0"></div></div>
+      <dl class="kv">
+        <div><dt>Seções</dt><dd id="kv-secoes">–</dd></div>
+        <div><dt>Eleitorado</dt><dd id="kv-eleit">–</dd></div>
+        <div><dt>Comparecimento</dt><dd id="kv-comp">–</dd></div>
+        <div><dt>Abstenção</dt><dd id="kv-abst">–</dd></div>
+      </dl>
+    </div>
+    <div class="votes-comp">
+      <p class="eyebrow">Composição dos votos apurados</p>
+      <div class="stack" id="vc-stack" role="img" aria-label="Composição dos votos"></div>
+      <ul class="legend" id="vc-legend"></ul>
+      <div class="meta-line" id="meta-line"></div>
+    </div>
+  </section>
+
+  <div class="cols">
+    <section class="panel" aria-labelledby="rank-title">
+      <div class="panel-head">
+        <h2 id="rank-title">Candidatos</h2>
+        <span class="sub" id="rank-sub"></span>
+      </div>
+      <div id="rank-body"><p class="empty">Carregando resultados…</p></div>
+    </section>
+
+    <div class="side">
+      <section class="panel" aria-labelledby="evo-title">
+        <div class="panel-head">
+          <h2 id="evo-title">Evolução</h2>
+          <span class="sub">% dos votos válidos × % de seções</span>
+        </div>
+        <div class="chart-wrap" id="evo"></div>
+        <ul class="chart-legend" id="evo-legend"></ul>
+      </section>
+
+      <section class="panel" aria-labelledby="wins-title" id="wins-panel">
+        <div class="panel-head">
+          <h2 id="wins-title">Onde cada um lidera</h2>
+          <span class="sub" id="wins-sub"></span>
+        </div>
+        <div id="wins-body">
+          <p class="empty" style="padding-top:0">Busca o resultado de cada um dos 645 municípios e conta em quantos cada candidato está na frente.</p>
+          <button class="btn primary" type="button" id="wins-load">Carregar líder por município</button>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <section class="panel" aria-labelledby="mun-title" id="mun-panel">
+    <div class="panel-head">
+      <h2 id="mun-title">Andamento por município</h2>
+      <span class="sub" id="mun-sub"></span>
+    </div>
+    <div class="heat" id="heat" role="group" aria-label="Municípios coloridos pelo percentual de seções totalizadas"></div>
+    <div class="scale">
+      <span>0%</span>
+      <span class="ramp" aria-hidden="true">
+        <i style="background:var(--seq-0)"></i><i style="background:var(--seq-1)"></i><i style="background:var(--seq-2)"></i><i style="background:var(--seq-3)"></i><i style="background:var(--seq-4)"></i><i style="background:var(--seq-5)"></i><i style="background:var(--seq-6)"></i>
+      </span>
+      <span>100% das seções totalizadas · clique num quadrado ou numa linha para ver o município</span>
+    </div>
+    <div class="more">
+      <input class="search" id="mt-search" placeholder="Buscar na tabela…" aria-label="Buscar município na tabela">
+    </div>
+    <div class="table-wrap">
+      <table class="mt" id="mt">
+        <thead><tr>
+          <th data-k="nm">Município</th>
+          <th data-k="pst" class="r">Seções totalizadas</th>
+          <th data-k="te" class="r">Eleitorado</th>
+          <th data-k="pc" class="r">Comparecimento</th>
+          <th data-k="pa" class="r">Abstenção</th>
+          <th data-k="lider">Líder</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    Dados oficiais do <a href="https://resultados.tse.jus.br/oficial/app/index.html" target="_blank" rel="noopener">Tribunal Superior Eleitoral</a>,
+    lidos direto dos arquivos públicos de divulgação (<code>resultados.tse.jus.br/oficial/ele2026</code>). Atualiza sozinho a cada 30 s;
+    a evolução fica guardada só neste navegador.
+  </footer>
+</main>
+
+<div class="tip" id="tip" hidden></div>
+
+<script>
+(() => {
+  "use strict";
+
+  // ---------- configuração ----------
+  const BASE = "https://resultados.tse.jus.br/oficial/ele2026";
+  const UF = "sp";
+  const REFRESH_S = 30;
+  const AB_EVERY = 2; // arquivo de acompanhamento (~500 KB) a cada 2 ciclos
+  const CARGOS = [
+    { cd: 1, ele: 6257, nome: "Presidente", federal: true },
+    { cd: 3, ele: 6259, nome: "Governador" },
+    { cd: 5, ele: 6259, nome: "Senador" },
+    { cd: 6, ele: 6259, nome: "Dep. Federal", prop: true },
+    { cd: 7, ele: 6259, nome: "Dep. Estadual", prop: true },
+  ];
+  const SERIES = ["--s1", "--s2", "--s3", "--s4", "--s5", "--s6"];
+
+  // ---------- utilidades ----------
+  const $ = (s, el = document) => el.querySelector(s);
+  const nf = new Intl.NumberFormat("pt-BR");
+  const pf = new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const num = (v) => (v == null || v === "" ? 0 : Number(String(v).replace(/\./g, "").replace(",", ".")));
+  const pct = (v) => (v == null || v === "" ? 0 : Number(String(v).replace(",", ".")));
+  const pad = (n, w) => String(n).padStart(w, "0");
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const title = (s) => String(s || "").toLowerCase().replace(/(^|[\s'-])(\p{L})/gu, (m, a, b) => a + b.toUpperCase())
+    .replace(/\b(De|Da|Do|Das|Dos|E)\b/g, (w) => w.toLowerCase());
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+  };
+
+  const url = {
+    result(c, mun) {
+      const uf = mun === "br" ? "br" : UF;
+      const pre = mun && mun !== "br" ? UF + pad(mun, 5) : uf;
+      return `${BASE}/${c.ele}/dados/${uf}/${pre}-c${pad(c.cd, 4)}-e${pad(c.ele, 6)}-u.json`;
+    },
+    ab: (c) => `${BASE}/${c.ele}/dados/${UF}/${UF}-e${pad(c.ele, 6)}-ab.json`,
+    cm: (c) => `${BASE}/${c.ele}/config/mun-e${pad(c.ele, 6)}-cm.json`,
+    foto: (c, sq) => `${BASE}/${c.ele}/fotos/${c.federal ? "br" : UF}/${sq}.jpeg`,
+  };
+
+  async function getJSON(u) {
+    const r = await fetch(u, { cache: "no-cache" });
+    if (!r.ok) { const e = new Error(`HTTP ${r.status}`); e.status = r.status; throw e; }
+    return r.json();
+  }
+
+  // ---------- estado ----------
+  const saved = store.get("apuracao:prefs", {});
+  const state = {
+    cargo: CARGOS.find((c) => c.cd === saved.cargo) || CARGOS[2],
+    mun: saved.mun ?? null,       // null = estado; "br" = Brasil (só Presidente); "71072" = município
+    data: null,
+    ab: {},                       // por eleição
+    muns: {},                     // por eleição: código -> {nm, cdi}
+    lideres: {},                  // `${ele}:${cd}` -> {mun: {nm, n, p}}
+    paused: false,
+    cycle: 0,
+    countdown: REFRESH_S,
+    showAll: false,
+    query: "",
+    sort: { k: "nm", dir: 1 },
+    mtQuery: "",
+  };
+  const savePrefs = () => store.set("apuracao:prefs", { cargo: state.cargo.cd, mun: state.mun });
+
+  // ---------- leitura do arquivo unificado ----------
+  function parseResult(d) {
+    const carg = d.carg[0];
+    const cands = [];
+    const parties = [];
+    for (const a of carg.agr || []) {
+      let agVotes = 0;
+      for (const p of a.par || []) {
+        const pv = num(p.tvtn) + num(p.tvtl);
+        agVotes += pv;
+        parties.push({ sg: p.sg, n: p.n, nm: p.nm, nfed: p.nfed, nom: num(p.tvtn), leg: num(p.tvtl), total: pv });
+        for (const c of p.cand || []) {
+          cands.push({
+            n: c.n, sq: c.sqcand, nome: c.nmu || c.nm, nomeCompleto: c.nm,
+            partido: p.sg, agr: a.nm, agrTp: a.tp, com: a.com,
+            votos: num(c.vap), pct: pct(c.pvapn || c.pvap), eleito: c.e === "s", st: c.st || "", dvt: c.dvt || "",
+            seq: num(c.seq), vices: (c.vs || []).map((v) => ({ tp: v.tp, nome: v.nmu || v.nm, sg: v.sgp })),
+          });
+        }
+      }
+      a._votes = agVotes;
+    }
+    cands.sort((x, y) => y.votos - x.votos || x.seq - y.seq);
+    const groups = (carg.agr || []).map((a) => ({
+      nm: a.nm, tp: a.tp, com: a.com, vag: num(a.vag), votos: a._votes,
+    })).sort((x, y) => y.vag - x.vag || y.votos - x.votos);
+    return {
+      raw: d, carg, cands, parties, groups,
+      vagas: num(carg.nv), qe: num(carg.qe),
+      s: d.s || {}, e: d.e || {}, v: d.v || {},
+      dg: d.dg, hg: d.hg, dt: d.dt, ht: d.ht, idg: d.idg,
+      final: d.tf === "s", andamento: d.and,
+    };
+  }
+
+  // ---------- histórico local (evolução) ----------
+  const histKey = () => `apuracao:hist:${state.cargo.ele}:${state.cargo.cd}:${state.mun || UF}`;
+  function pushHistory(r) {
+    const h = store.get(histKey(), []);
+    const p = pct(r.s.pstn || r.s.pst);
+    const stamp = `${r.dt} ${r.ht}`;
+    if (h.length && h[h.length - 1].t === stamp) return h;
+    const vals = {};
+    if (state.cargo.prop) {
+      for (const g of r.groups.slice(0, 12)) vals[g.nm] = r.v.vv ? (g.votos / num(r.v.vv)) * 100 : 0;
+    } else {
+      for (const c of r.cands.slice(0, 8)) vals[c.n] = c.pct;
+    }
+    h.push({ t: stamp, p, vals });
+    while (h.length > 400) h.shift();
+    store.set(histKey(), h);
+    return h;
+  }
+  // cor segue a entidade: atribuída uma vez e guardada
+  function colorFor(key) {
+    const k = `apuracao:colors:${state.cargo.ele}:${state.cargo.cd}`;
+    const map = store.get(k, {});
+    if (!(key in map)) {
+      const used = new Set(Object.values(map));
+      const free = SERIES.findIndex((_, i) => !used.has(i));
+      map[key] = free === -1 ? Object.keys(map).length % SERIES.length : free;
+      store.set(k, map);
+    }
+    return `var(${SERIES[map[key]]})`;
+  }
+
+  // ---------- render: topo ----------
+  function renderCargos() {
+    const el = $("#cargos");
+    el.innerHTML = CARGOS.map((c) =>
+      `<button type="button" data-cd="${c.cd}" aria-pressed="${c === state.cargo}">${c.nome}</button>`).join("");
+  }
+  function abrName() {
+    if (state.mun === "br") return "Brasil";
+    if (state.mun) return title(state.muns[state.cargo.ele]?.[state.mun]?.nm || state.mun) + " · SP";
+    return "São Paulo";
+  }
+  function renderAbr() {
+    $("#abr-label").textContent = abrName();
+    $("#mun-clear").hidden = !state.mun;
+    const list = state.muns[state.cargo.ele];
+    if (list) {
+      const opts = Object.entries(list).sort((a, b) => a[1].nm.localeCompare(b[1].nm, "pt-BR"))
+        .map(([cd, m]) => `<option value="${esc(title(m.nm))}"></option>`);
+      if (state.cargo.federal) opts.unshift('<option value="Brasil"></option>');
+      $("#mun-list").innerHTML = opts.join("");
+    }
+  }
+
+  function renderStatus(r) {
+    const s = r.s, e = r.e, v = r.v;
+    const p = pct(s.pstn || s.pst);
+    $("#st-pct").innerHTML = `${pf.format(p)}<small>%</small>`;
+    $("#st-bar").style.width = `${Math.min(100, p)}%`;
+    $("#st-label").textContent = r.final ? "Totalização encerrada" : "das seções já entraram na contagem";
+    $("#kv-secoes").innerHTML = `${nf.format(num(s.st))} <small>de ${nf.format(num(s.ts))}</small>`;
+    $("#kv-eleit").textContent = nf.format(num(e.te));
+    $("#kv-comp").innerHTML = `${pf.format(pct(e.pcn || e.pc))}% <small>${nf.format(num(e.c))}</small>`;
+    $("#kv-abst").innerHTML = `${pf.format(pct(e.pan || e.pa))}% <small>${nf.format(num(e.a))}</small>`;
+
+    const tv = num(v.tv) || 1;
+    const parts = [
+      { k: "Válidos", n: num(v.vv), c: "var(--accent)" },
+      { k: "Brancos", n: num(v.vb), c: "var(--seq-2)" },
+      { k: "Nulos", n: num(v.tvn), c: "var(--muted)" },
+      { k: "Anulados sub judice", n: num(v.vansj) + num(v.van), c: "var(--bad)" },
+    ];
+    $("#vc-stack").innerHTML = parts.filter((x) => x.n > 0)
+      .map((x) => `<span style="flex:${x.n};background:${x.c}" title="${x.k}: ${nf.format(x.n)}"></span>`).join("")
+      || `<span style="flex:1;background:var(--surface-2)"></span>`;
+    $("#vc-stack").setAttribute("aria-label", parts.map((x) => `${x.k} ${pf.format((x.n / tv) * 100)}%`).join(", "));
+    $("#vc-legend").innerHTML = parts.map((x) =>
+      `<li><span class="sw" style="background:${x.c}"></span><span>${x.k} <span class="pc">${pf.format((x.n / tv) * 100)}%</span></span><b>${nf.format(x.n)}</b></li>`).join("");
+    const extra = state.cargo.prop && v.vl ? ` · Nominais <b>${nf.format(num(v.vnom))}</b> · Legenda <b>${nf.format(num(v.vl))}</b>` : "";
+    $("#meta-line").innerHTML = `Arquivo do TSE gerado em <b>${esc(r.dg)} ${esc(r.hg)}</b> · última totalização <b>${esc(r.ht || "–")}</b>${extra}`;
+  }
+
+  // ---------- render: ranking ----------
+  function statusChip(c, i, r) {
+    const st = c.st.toLowerCase();
+    if (c.dvt && /anulad|sub judice/i.test(c.dvt)) return `<span class="chip bad">${esc(c.dvt)}</span>`;
+    if (st.includes("eleito") && !st.includes("não")) return `<span class="chip good">${esc(c.st)}</span>`;
+    if (st.includes("2º turno")) return `<span class="chip warn">2º turno</span>`;
+    if (st.includes("não eleito")) return `<span class="chip mute">Não eleito</span>`;
+    if (st) return `<span class="chip mute">${esc(c.st)}</span>`;
+    return "";
+  }
+
+  function candRow(c, i, r, opts) {
+    const inVaga = i < (opts.cut || 0);
+    const w = Math.max(0, Math.min(100, (c.pct / opts.scale) * 100));
+    const marker = opts.marker ? `<u style="left:${(opts.marker / opts.scale) * 100}%" title="${opts.marker}% dos válidos"></u>` : "";
+    const vices = c.vices.length ? ` · ${c.vices.map((v) => (v.tp === "s1" ? "1º sup. " : v.tp === "s2" ? "2º sup. " : "vice ") + esc(title(v.nome))).join(", ")}` : "";
+    const grp = c.agrTp === "c" ? esc(title(c.agr)) : c.agrTp === "f" ? "Federação" : "";
+    return `<li class="cand ${opts.cut && !inVaga ? "out" : ""}">
+      <span class="pos">${i + 1}</span>
+      <img class="foto" alt="" loading="lazy" src="${url.foto(state.cargo, c.sq)}" onerror="this.style.visibility='hidden'">
+      <div class="who"><b>${esc(title(c.nome))}</b><span class="n">${esc(c.n)}</span>${statusChip(c, i, r)}
+        <small title="${esc(c.com || "")}">${esc(c.partido)}${grp ? " · " + grp : ""}${vices}</small></div>
+      <div class="nums"><span class="p">${pf.format(c.pct)}%</span><span class="v">${nf.format(c.votos)} votos</span></div>
+      <div class="meter"><i style="width:${w}%"></i>${marker}</div>
+    </li>`;
+  }
+
+  function renderRanking(r) {
+    const c = state.cargo;
+    $("#rank-title").textContent = c.prop ? `${c.nome} — partidos e candidatos` : `${c.nome}`;
+    if (c.prop) return renderProportional(r);
+    const top = r.cands[0]?.pct || 0;
+    const majority = r.vagas === 1;
+    const scale = majority ? Math.max(60, Math.ceil((top + 5) / 10) * 10) : Math.max(5, top * 1.1);
+    const cut = majority ? 0 : r.vagas;
+    $("#rank-sub").textContent = majority
+      ? "Maioria absoluta (50% dos válidos + 1) elege no 1º turno"
+      : `${r.vagas} vagas em disputa`;
+    let html = "";
+    r.cands.forEach((cd, i) => {
+      if (cut && i === cut) html += `<li class="cut">Linha de corte · ${r.vagas} vagas</li>`;
+      html += candRow(cd, i, r, { cut, scale, marker: majority ? 50 : 0 });
+    });
+    $("#rank-body").innerHTML = `<ol class="rank">${html}</ol>`;
+  }
+
+  function renderProportional(r) {
+    const totalSeats = r.groups.reduce((s, g) => s + g.vag, 0);
+    $("#rank-sub").textContent = `${r.vagas} cadeiras${r.qe ? ` · quociente eleitoral ${nf.format(r.qe)} votos` : ""}`;
+    const vv = num(r.v.vv) || 1;
+    const rows = r.groups.filter((g) => g.votos > 0 || g.vag > 0).map((g) =>
+      `<tr><td><b>${esc(g.tp === "f" ? title(g.nm) : g.com || g.nm)}</b>${g.tp === "f" ? `<br><small style="color:var(--muted)">${esc(g.com)}</small>` : ""}</td>
+        <td><div class="seats" aria-label="${g.vag} cadeiras">${"<i></i>".repeat(g.vag)}</div></td>
+        <td class="r"><b>${g.vag}</b></td>
+        <td class="r">${nf.format(g.votos)}<br><small style="color:var(--muted)">${pf.format((g.votos / vv) * 100)}%</small></td></tr>`).join("");
+    const q = state.query.trim().toLowerCase();
+    const list = r.cands.filter((c) => !q || (c.nome + " " + c.nomeCompleto + " " + c.n + " " + c.partido).toLowerCase().includes(q));
+    const shown = state.showAll || q ? list.slice(0, 400) : list.slice(0, r.vagas);
+    const scale = Math.max(0.5, (r.cands[0]?.pct || 1) * 1.1);
+    const cand = shown.map((c) => candRow(c, r.cands.indexOf(c), r, { cut: r.vagas, scale })).join("");
+    $("#rank-body").innerHTML = `
+      <p class="eyebrow">Cadeiras projetadas pelo TSE (${totalSeats} de ${r.vagas})</p>
+      <div style="overflow-x:auto"><table class="parties"><thead><tr><th>Partido / federação</th><th>Cadeiras</th><th class="r">Nº</th><th class="r">Votos</th></tr></thead><tbody>${rows}</tbody></table></div>
+      <div class="more" style="margin:18px 0 4px">
+        <p class="eyebrow" style="margin:0;flex:1">Mais votados${q ? "" : state.showAll ? "" : ` · top ${r.vagas}`}</p>
+        <input class="search" id="cand-search" placeholder="Buscar candidato, nº ou partido" value="${esc(state.query)}" aria-label="Buscar candidato">
+      </div>
+      <ol class="rank">${cand || '<li class="empty">Nenhum candidato encontrado.</li>'}</ol>
+      ${!q ? `<div class="more"><button class="btn" type="button" id="toggle-all">${state.showAll ? "Mostrar só os " + r.vagas + " primeiros" : `Mostrar mais (${Math.min(400, r.cands.length)} de ${r.cands.length})`}</button></div>` : ""}`;
+    const inp = $("#cand-search");
+    inp.addEventListener("input", () => {
+      state.query = inp.value; const pos = inp.selectionStart;
+      renderProportional(r); const n = $("#cand-search"); n.focus(); n.setSelectionRange(pos, pos);
+    });
+    $("#toggle-all")?.addEventListener("click", () => { state.showAll = !state.showAll; renderProportional(r); });
+  }
+
+  // ---------- render: evolução ----------
+  function renderEvolution(r, hist) {
+    const wrap = $("#evo"), legend = $("#evo-legend");
+    let keys, label;
+    if (state.cargo.prop) {
+      keys = r.groups.slice().sort((a, b) => b.votos - a.votos).slice(0, 5).map((g) => g.nm);
+      label = (k) => { const g = r.groups.find((x) => x.nm === k); return g ? (g.tp === "f" ? title(g.nm) : g.com || g.nm) : k; };
+    } else {
+      keys = r.cands.slice(0, 5).map((c) => c.n);
+      label = (k) => { const c = r.cands.find((x) => x.n === k); return c ? `${title(c.nome)} (${c.partido})` : k; };
+    }
+    const now = (k) => hist[hist.length - 1]?.vals[k];
+    legend.innerHTML = keys.map((k) =>
+      `<li><span class="sw" style="background:${colorFor(k)}"></span><span>${esc(label(k))}</span><b>${now(k) != null ? pf.format(now(k)) + "%" : "–"}</b></li>`).join("");
+    if (hist.length < 2) {
+      wrap.innerHTML = `<p class="empty">A curva começa a aparecer a partir do próximo lote publicado pelo TSE. Deixe a página aberta: cada atualização vira um ponto (${hist.length} até agora).</p>`;
+      return;
+    }
+    const W = Math.max(280, wrap.clientWidth || 400), H = 230, m = { t: 10, r: 12, b: 26, l: 34 };
+    const xs = hist.map((h) => h.p);
+    let x0 = Math.min(...xs), x1 = Math.max(...xs);
+    if (x1 - x0 < 1) { x0 = Math.max(0, x0 - 0.5); x1 = Math.min(100, x1 + 0.5); }
+    let ys = [];
+    hist.forEach((h) => keys.forEach((k) => { if (h.vals[k] != null) ys.push(h.vals[k]); }));
+    let y1 = Math.max(10, Math.ceil((Math.max(...ys) + 2) / 5) * 5), y0 = 0;
+    const X = (v) => m.l + ((v - x0) / (x1 - x0)) * (W - m.l - m.r);
+    const Y = (v) => H - m.b - ((v - y0) / (y1 - y0)) * (H - m.t - m.b);
+    const yt = []; const step = y1 > 40 ? 10 : 5;
+    for (let v = 0; v <= y1; v += step) yt.push(v);
+    const xt = [x0, (x0 + x1) / 2, x1];
+    let svg = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Evolução do percentual dos votos válidos conforme as seções são totalizadas">`;
+    svg += `<g class="grid">${yt.map((v) => `<line x1="${m.l}" x2="${W - m.r}" y1="${Y(v)}" y2="${Y(v)}"/>`).join("")}</g>`;
+    svg += `<g class="axis">${yt.map((v) => `<text x="${m.l - 6}" y="${Y(v) + 4}" text-anchor="end">${v}%</text>`).join("")}`;
+    svg += xt.map((v, i) => `<text x="${X(v)}" y="${H - 6}" text-anchor="${i === 0 ? "start" : i === 2 ? "end" : "middle"}">${pf.format(v)}%</text>`).join("") + `</g>`;
+    if (!state.cargo.prop && r.vagas === 1 && y1 >= 50) {
+      svg += `<line x1="${m.l}" x2="${W - m.r}" y1="${Y(50)}" y2="${Y(50)}" stroke="var(--ink-2)" stroke-dasharray="4 4"/><text class="lbl" x="${W - m.r}" y="${Y(50) - 5}" text-anchor="end">50% dos válidos</text>`;
+    }
+    for (const k of keys) {
+      const pts = hist.filter((h) => h.vals[k] != null).map((h) => `${X(h.p).toFixed(1)},${Y(h.vals[k]).toFixed(1)}`);
+      if (!pts.length) continue;
+      const last = pts[pts.length - 1].split(",");
+      svg += `<polyline fill="none" stroke="${colorFor(k)}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" points="${pts.join(" ")}"/>`;
+      svg += `<circle cx="${last[0]}" cy="${last[1]}" r="4" fill="${colorFor(k)}" stroke="var(--surface)" stroke-width="2"/>`;
+    }
+    svg += `<line id="xh" y1="${m.t}" y2="${H - m.b}" stroke="var(--ink-2)" stroke-width="1" visibility="hidden"/>`;
+    svg += `<rect x="${m.l}" y="${m.t}" width="${W - m.l - m.r}" height="${H - m.t - m.b}" fill="transparent" id="hit"/></svg>`;
+    wrap.innerHTML = svg;
+    const hit = $("#hit", wrap), xh = $("#xh", wrap);
+    hit.addEventListener("pointermove", (ev) => {
+      const rect = wrap.querySelector("svg").getBoundingClientRect();
+      const px = ((ev.clientX - rect.left) / rect.width) * W;
+      let best = hist[0];
+      for (const h of hist) if (Math.abs(X(h.p) - px) < Math.abs(X(best.p) - px)) best = h;
+      xh.setAttribute("x1", X(best.p)); xh.setAttribute("x2", X(best.p)); xh.setAttribute("visibility", "visible");
+      showTip(ev, `<b>${pf.format(best.p)}% das seções</b><br><span style="opacity:.75">${esc(best.t)}</span>` +
+        keys.filter((k) => best.vals[k] != null).sort((a, b) => best.vals[b] - best.vals[a])
+          .map((k) => `<div class="row"><span>${esc(label(k))}</span><b>${pf.format(best.vals[k])}%</b></div>`).join(""));
+    });
+    hit.addEventListener("pointerleave", () => { xh.setAttribute("visibility", "hidden"); hideTip(); });
+  }
+
+  // ---------- tooltip ----------
+  const tip = $("#tip");
+  function showTip(ev, html) {
+    tip.innerHTML = html; tip.hidden = false;
+    const r = tip.getBoundingClientRect();
+    let x = ev.clientX + 14, y = ev.clientY + 14;
+    if (x + r.width > innerWidth - 8) x = ev.clientX - r.width - 14;
+    if (y + r.height > innerHeight - 8) y = ev.clientY - r.height - 14;
+    tip.style.left = Math.max(8, x) + "px"; tip.style.top = Math.max(8, y) + "px";
+  }
+  const hideTip = () => { tip.hidden = true; };
+
+  // ---------- municípios ----------
+  function munRows() {
+    const ele = state.cargo.ele;
+    const ab = state.ab[ele] || {};
+    const names = state.muns[ele] || {};
+    const lid = state.lideres[`${ele}:${state.cargo.cd}`] || {};
+    return Object.keys(names).map((cd) => {
+      const a = ab[cd] || {};
+      const l = lid[cd];
+      return {
+        cd, nm: title(names[cd].nm), pst: pct(a.s?.pstn || a.s?.pst), te: num(a.e?.te),
+        pc: pct(a.e?.pcn || a.e?.pc), pa: pct(a.e?.pan || a.e?.pa), lider: l ? l.nome : "", lp: l ? l.p : 0,
+      };
+    });
+  }
+  function seqColor(p) {
+    if (p <= 0) return "var(--seq-0)";
+    const i = Math.min(6, 1 + Math.floor((p / 100) * 5.999));
+    return p >= 100 ? "var(--seq-6)" : `var(--seq-${Math.min(5, i)})`;
+  }
+  function renderMunicipios() {
+    const panel = $("#mun-panel");
+    if (state.mun === "br") { panel.hidden = true; return; }
+    panel.hidden = false;
+    const rows = munRows();
+    if (!rows.length) return;
+    const done = rows.filter((r) => r.pst >= 100).length, started = rows.filter((r) => r.pst > 0).length;
+    $("#mun-sub").textContent = `${rows.length} municípios · ${nf.format(done)} com 100% · ${nf.format(started)} já começaram`;
+    const byName = rows.slice().sort((a, b) => a.nm.localeCompare(b.nm, "pt-BR"));
+    $("#heat").innerHTML = byName.map((r) =>
+      `<button type="button" data-mun="${r.cd}" class="${state.mun === r.cd ? "sel" : ""}" style="background:${seqColor(r.pst)}" aria-label="${esc(r.nm)}: ${pf.format(r.pst)}% das seções"></button>`).join("");
+    const q = state.mtQuery.trim().toLowerCase();
+    const { k, dir } = state.sort;
+    const list = rows.filter((r) => !q || r.nm.toLowerCase().includes(q) || r.lider.toLowerCase().includes(q))
+      .sort((a, b) => (typeof a[k] === "string" ? a[k].localeCompare(b[k], "pt-BR") : a[k] - b[k]) * dir);
+    $("#mt tbody").innerHTML = list.map((r) => `<tr data-mun="${r.cd}">
+      <td>${esc(r.nm)}</td>
+      <td class="r"><span class="pbar"><i style="width:${Math.min(100, r.pst)}%"></i></span>${pf.format(r.pst)}%</td>
+      <td class="r">${nf.format(r.te)}</td>
+      <td class="r">${pf.format(r.pc)}%</td>
+      <td class="r">${pf.format(r.pa)}%</td>
+      <td>${r.lider ? `${esc(r.lider)} <small style="color:var(--muted)">${pf.format(r.lp)}%</small>` : '<span style="color:var(--muted)">–</span>'}</td></tr>`).join("");
+    document.querySelectorAll("#mt th").forEach((th) => th.setAttribute("aria-sort", th.dataset.k === k ? (dir > 0 ? "ascending" : "descending") : "none"));
+  }
+
+  function renderWins() {
+    const panel = $("#wins-panel");
+    const c = state.cargo;
+    panel.hidden = !!c.prop || state.mun === "br";
+    if (panel.hidden) return;
+    const lid = state.lideres[`${c.ele}:${c.cd}`];
+    if (!lid) {
+      $("#wins-sub").textContent = "";
+      $("#wins-body").innerHTML = `<p class="empty" style="padding-top:0">Busca o resultado de cada um dos 645 municípios e conta em quantos cada candidato está na frente.</p>
+        <button class="btn primary" type="button" id="wins-load">Carregar líder por município</button>`;
+      return;
+    }
+    const counts = {};
+    let total = 0;
+    for (const v of Object.values(lid)) { if (!v.votos) continue; counts[v.nome] = (counts[v.nome] || 0) + 1; total++; }
+    const arr = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+    const max = arr[0]?.[1] || 1;
+    $("#wins-sub").textContent = `${total} municípios com votos · lido às ${lid._at || ""}`;
+    $("#wins-body").innerHTML = (arr.length
+      ? `<ul class="wins">${arr.map(([n, k]) => `<li><span>${esc(n)}</span><b>${k}</b><span class="bar"><i style="width:${(k / max) * 100}%"></i></span></li>`).join("")}</ul>`
+      : `<p class="empty">Nenhum município com votos totalizados ainda.</p>`) +
+      `<div class="more"><button class="btn" type="button" id="wins-load">Recarregar</button></div>`;
+  }
+
+  async function loadLideres() {
+    const c = state.cargo, key = `${c.ele}:${c.cd}`;
+    const codes = Object.keys(state.muns[c.ele] || {});
+    if (!codes.length) return;
+    const btn = $("#wins-load"); if (btn) { btn.disabled = true; btn.textContent = "Carregando 0 de " + codes.length + "…"; }
+    const out = {}; let i = 0, done = 0;
+    async function worker() {
+      while (i < codes.length) {
+        const cd = codes[i++];
+        try {
+          const r = parseResult(await getJSON(url.result(c, cd)));
+          const top = r.cands[0];
+          out[cd] = top ? { nome: `${title(top.nome)} (${top.partido})`, p: top.pct, votos: top.votos } : { nome: "", p: 0, votos: 0 };
+        } catch { /* município sem arquivo ainda */ }
+        done++;
+        if (btn && done % 25 === 0) btn.textContent = `Carregando ${done} de ${codes.length}…`;
+      }
+    }
+    await Promise.all(Array.from({ length: 8 }, worker));
+    out._at = new Date().toLocaleTimeString("pt-BR");
+    state.lideres[key] = out;
+    if (state.cargo === c) { renderWins(); renderMunicipios(); }
+  }
+
+  // ---------- ciclo de atualização ----------
+  async function ensureMuns(c) {
+    if (state.muns[c.ele]) return;
+    const cm = await getJSON(url.cm(c));
+    const sp = cm.abr.find((a) => a.cd.toLowerCase() === UF);
+    const map = {};
+    for (const m of sp?.mu || []) map[m.cd] = { nm: m.nm, cdi: m.cdi };
+    state.muns[c.ele] = map;
+  }
+  async function loadAb(c) {
+    const ab = await getJSON(url.ab(c));
+    const map = {};
+    for (const a of ab.abr || []) if (a.tpabr === "mun") map[a.cdabr] = a;
+    state.ab[c.ele] = map;
+  }
+
+  let loading = false;
+  async function refresh(force) {
+    if (loading) return;
+    loading = true;
+    const c = state.cargo, mun = state.mun;
+    const live = $("#live");
+    try {
+      const jobs = [getJSON(url.result(c, mun))];
+      const needAb = mun !== "br" && (force || !state.ab[c.ele] || state.cycle % AB_EVERY === 0);
+      jobs.push(ensureMuns(c).catch(() => {}));
+      if (needAb) jobs.push(loadAb(c).catch(() => {}));
+      const [d] = await Promise.all(jobs);
+      if (c !== state.cargo || mun !== state.mun) return; // usuário trocou no meio
+      const r = parseResult(d);
+      state.data = r;
+      const hist = pushHistory(r);
+      renderAbr(); renderStatus(r); renderRanking(r); renderEvolution(r, hist); renderWins(); renderMunicipios();
+      $("#banner").hidden = true;
+      live.classList.remove("err");
+    } catch (err) {
+      live.classList.add("err");
+      const b = $("#banner");
+      b.hidden = false;
+      b.textContent = err.status === 404
+        ? `O TSE ainda não publicou dados de ${c.nome} para ${abrName()}. Nova tentativa em ${REFRESH_S} s.`
+        : err instanceof TypeError
+          ? `Este ambiente bloqueou o acesso ao site do TSE. Se você está vendo a página dentro de um app ou de uma pré-visualização, abra o index.html direto no Chrome, Edge ou Firefox. Nova tentativa em ${REFRESH_S} s.`
+          : `Não foi possível falar com o TSE (${err.message || err}). Nova tentativa em ${REFRESH_S} s.`;
+    } finally {
+      loading = false;
+      state.cycle++;
+      state.countdown = REFRESH_S;
+      tick();
+    }
+  }
+
+  function tick() {
+    const live = $("#live");
+    live.classList.toggle("paused", state.paused);
+    const at = state.data ? `TSE ${state.data.hg}` : "";
+    $("#live-text").textContent = state.paused ? `Pausado · ${at}` : `Ao vivo · ${at} · próxima em ${state.countdown}s`;
+  }
+  setInterval(() => {
+    if (state.paused || loading) return;
+    state.countdown--;
+    if (state.countdown <= 0) refresh(); else tick();
+  }, 1000);
+
+  // ---------- eventos ----------
+  function setCargo(cd) {
+    const c = CARGOS.find((x) => x.cd === cd);
+    if (!c || c === state.cargo) return;
+    state.cargo = c; state.showAll = false; state.query = "";
+    if (state.mun === "br" && !c.federal) state.mun = null;
+    savePrefs(); renderCargos(); resetPanels(); refresh(true);
+  }
+  function setMun(mun) {
+    if (mun === state.mun) return;
+    state.mun = mun; savePrefs();
+    $("#mun-input").value = "";
+    resetPanels(); refresh(true);
+    window.scrollTo({ top: 0, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  }
+  function resetPanels() {
+    $("#rank-body").innerHTML = '<p class="empty">Carregando resultados…</p>';
+    $("#evo").innerHTML = ""; $("#evo-legend").innerHTML = "";
+    $("#abr-label").textContent = abrName();
+    $("#mun-clear").hidden = !state.mun;
+  }
+
+  $("#cargos").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) setCargo(Number(b.dataset.cd)); });
+  $("#mun-input").addEventListener("change", (e) => {
+    const v = e.target.value.trim().toLowerCase();
+    if (!v) return;
+    if (v === "brasil" && state.cargo.federal) return setMun("br");
+    const list = state.muns[state.cargo.ele] || {};
+    const hit = Object.entries(list).find(([, m]) => m.nm.toLowerCase() === v)
+      || Object.entries(list).find(([, m]) => m.nm.toLowerCase().startsWith(v));
+    if (hit) setMun(hit[0]);
+  });
+  $("#mun-clear").addEventListener("click", () => setMun(null));
+  $("#refresh").addEventListener("click", () => refresh(true));
+  $("#pause").addEventListener("click", (e) => {
+    state.paused = !state.paused; e.target.textContent = state.paused ? "Retomar" : "Pausar"; tick();
+    if (!state.paused) refresh();
+  });
+  document.addEventListener("click", (e) => {
+    const t = e.target.closest("[data-mun]");
+    if (t && (t.closest("#heat") || t.closest("#mt"))) setMun(t.dataset.mun);
+    if (e.target.id === "wins-load") loadLideres();
+  });
+  $("#heat").addEventListener("pointerover", (e) => {
+    const b = e.target.closest("button[data-mun]"); if (!b) return;
+    const r = munRows().find((x) => x.cd === b.dataset.mun); if (!r) return;
+    showTip(e, `<b>${esc(r.nm)}</b><div class="row"><span>Seções totalizadas</span><b>${pf.format(r.pst)}%</b></div><div class="row"><span>Eleitorado</span><b>${nf.format(r.te)}</b></div>${r.lider ? `<div class="row"><span>Líder</span><b>${esc(r.lider)}</b></div>` : ""}`);
+  });
+  $("#heat").addEventListener("pointerout", hideTip);
+  $("#mt thead").addEventListener("click", (e) => {
+    const th = e.target.closest("th"); if (!th) return;
+    const k = th.dataset.k;
+    state.sort = state.sort.k === k ? { k, dir: -state.sort.dir } : { k, dir: k === "nm" || k === "lider" ? 1 : -1 };
+    renderMunicipios();
+  });
+  $("#mt-search").addEventListener("input", (e) => { state.mtQuery = e.target.value; renderMunicipios(); });
+  let rz;
+  addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(() => { if (state.data) renderEvolution(state.data, store.get(histKey(), [])); }, 150); });
+  document.addEventListener("visibilitychange", () => { if (!document.hidden && !state.paused) refresh(); });
+
+  renderCargos();
+  resetPanels();
+  refresh(true);
+})();
+</script>
+</body>
+</html>
