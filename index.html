@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Apuração SP 2026</title>
+<title>Apuração 2026</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,500..800&family=Public+Sans:wght@400;500;600;700&display=swap">
@@ -244,6 +244,30 @@ footer a { color: var(--ink-2); }
   .abr input { width: 100%; max-width: none; }
   .abr { width: 100%; }
 }
+/* ---------- seletor de UF ---------- */
+.abr select {
+  padding: 7px 28px 7px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface);
+  font-weight: 600; font-size: 13.5px; cursor: pointer;
+}
+.seg button[disabled] { opacity: .4; cursor: not-allowed; }
+.hint { font-size: 12px; color: var(--muted); width: 100%; margin: 0; }
+
+/* ---------- mosaico do Brasil ---------- */
+.br-wrap { display: grid; grid-template-columns: minmax(0, 420px) minmax(0, 1fr); gap: 20px; align-items: start; }
+.tiles { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 4px; }
+.tile {
+  aspect-ratio: 1; border: 0; border-radius: 6px; padding: 3px; cursor: pointer; min-width: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+  background: color-mix(in srgb, var(--lead, var(--surface-2)) 26%, var(--surface));
+  box-shadow: inset 0 -4px 0 var(--lead, var(--line));
+  color: var(--ink); font: 700 13px/1 var(--font-display);
+}
+.tile small { font: 500 10px/1 var(--font-body); color: var(--ink-2); }
+.tile:hover, .tile.sel { outline: 2px solid var(--ink); }
+.tiles-legend { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12.5px; color: var(--ink-2); }
+.tiles-legend li { display: flex; align-items: center; gap: 6px; }
+.tiles-legend i { width: 12px; height: 12px; border-radius: 3px; }
+@media (max-width: 980px) { .br-wrap { grid-template-columns: minmax(0, 1fr); } .tiles { max-width: 420px; } }
 </style>
 </head>
 <body>
@@ -252,15 +276,17 @@ footer a { color: var(--ink-2); }
   <div class="topbar-inner">
     <div class="brand">
       <h1>Apuração 2026</h1>
-      <span class="uf" id="abr-label">São Paulo</span>
+      <span class="uf" id="abr-label">Brasil</span>
     </div>
     <div class="controls">
       <div class="seg" role="group" aria-label="Cargo" id="cargos"></div>
       <div class="abr">
+        <select id="uf-select" aria-label="Estado"></select>
         <input id="mun-input" list="mun-list" placeholder="Filtrar município…" autocomplete="off" aria-label="Município">
         <datalist id="mun-list"></datalist>
-        <button class="clear" id="mun-clear" type="button" hidden>Estado</button>
+        <button class="clear" id="mun-clear" type="button" hidden>Estado inteiro</button>
       </div>
+      <p class="hint" id="hint" hidden>Governador, Senador e Deputados são por estado: escolha um estado para ver.</p>
     </div>
     <div class="live" id="live">
       <span class="dot" aria-hidden="true"></span>
@@ -279,7 +305,7 @@ footer a { color: var(--ink-2); }
       <p class="eyebrow" id="st-eyebrow">Seções totalizadas</p>
       <div class="hero">
         <div class="big" id="st-pct">–</div>
-        <div class="label" id="st-label">das urnas já entraram na contagem</div>
+        <div class="label" id="st-label">das seções já entraram na contagem</div>
       </div>
       <div class="progress" aria-hidden="true"><div id="st-bar" style="width:0"></div></div>
       <dl class="kv">
@@ -321,15 +347,38 @@ footer a { color: var(--ink-2); }
           <h2 id="wins-title">Onde cada um lidera</h2>
           <span class="sub" id="wins-sub"></span>
         </div>
-        <div id="wins-body">
-          <p class="empty" style="padding-top:0">Busca o resultado de cada um dos 645 municípios e conta em quantos cada candidato está na frente.</p>
-          <button class="btn primary" type="button" id="wins-load">Carregar líder por município</button>
-        </div>
+        <div id="wins-body"></div>
       </section>
     </div>
   </div>
 
-  <section class="panel" aria-labelledby="mun-title" id="mun-panel">
+  <section class="panel" aria-labelledby="br-title" id="br-panel" hidden>
+    <div class="panel-head">
+      <h2 id="br-title">Andamento por estado</h2>
+      <span class="sub" id="br-sub"></span>
+    </div>
+    <div class="br-wrap">
+      <div>
+        <div class="tiles" id="tiles" role="group" aria-label="Estados coloridos pelo candidato que lidera"></div>
+        <ul class="tiles-legend" id="tiles-legend"></ul>
+      </div>
+      <div class="table-wrap" style="margin-top:0">
+        <table class="mt" id="ut">
+          <thead><tr>
+            <th data-k="nm">Estado</th>
+            <th data-k="pst" class="r">Seções totalizadas</th>
+            <th data-k="te" class="r">Eleitorado</th>
+            <th data-k="pc" class="r">Comparecimento</th>
+            <th data-k="lider">Líder</th>
+            <th data-k="vant" class="r">Vantagem</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="mun-title" id="mun-panel" hidden>
     <div class="panel-head">
       <h2 id="mun-title">Andamento por município</h2>
       <span class="sub" id="mun-sub"></span>
@@ -375,15 +424,31 @@ footer a { color: var(--ink-2); }
 
   // ---------- configuração ----------
   const BASE = "https://resultados.tse.jus.br/oficial/ele2026";
-  const UF = "sp";
   const REFRESH_S = 30;
-  const AB_EVERY = 2; // arquivo de acompanhamento (~500 KB) a cada 2 ciclos
+  const AB_EVERY = 2; // arquivos de acompanhamento a cada 2 ciclos
+  const UFS = {
+    ac: "Acre", al: "Alagoas", ap: "Amapá", am: "Amazonas", ba: "Bahia", ce: "Ceará", df: "Distrito Federal",
+    es: "Espírito Santo", go: "Goiás", ma: "Maranhão", mt: "Mato Grosso", ms: "Mato Grosso do Sul", mg: "Minas Gerais",
+    pa: "Pará", pb: "Paraíba", pr: "Paraná", pe: "Pernambuco", pi: "Piauí", rj: "Rio de Janeiro", rn: "Rio Grande do Norte",
+    rs: "Rio Grande do Sul", ro: "Rondônia", rr: "Roraima", sc: "Santa Catarina", sp: "São Paulo", se: "Sergipe", to: "Tocantins",
+  };
+  // mosaico: [coluna, linha]
+  const TILES = {
+    rr: [2, 0], ap: [4, 0],
+    am: [1, 1], pa: [3, 1], ma: [4, 1], ce: [5, 1], rn: [6, 1],
+    ac: [0, 2], ro: [1, 2], mt: [2, 2], to: [3, 2], pi: [4, 2], pe: [5, 2], pb: [6, 2],
+    ms: [2, 3], go: [3, 3], df: [4, 3], ba: [5, 3], se: [6, 3], al: [7, 3],
+    pr: [2, 4], sp: [3, 4], mg: [4, 4], es: [5, 4],
+    sc: [2, 5], rj: [4, 5],
+    rs: [2, 6], zz: [7, 6],
+  };
   const CARGOS = [
-    { cd: 1, ele: 6257, nome: "Presidente", federal: true },
-    { cd: 3, ele: 6259, nome: "Governador" },
-    { cd: 5, ele: 6259, nome: "Senador" },
-    { cd: 6, ele: 6259, nome: "Dep. Federal", prop: true },
-    { cd: 7, ele: 6259, nome: "Dep. Estadual", prop: true },
+    { cd: 1, ele: 6257, nome: "Presidente", federal: true, ok: () => true },
+    { cd: 3, ele: 6259, nome: "Governador", ok: (uf) => uf in UFS },
+    { cd: 5, ele: 6259, nome: "Senador", ok: (uf) => uf in UFS },
+    { cd: 6, ele: 6259, nome: "Dep. Federal", prop: true, ok: (uf) => uf in UFS },
+    { cd: 7, ele: 6259, nome: "Dep. Estadual", prop: true, ok: (uf) => uf in UFS && uf !== "df" },
+    { cd: 8, ele: 6259, nome: "Dep. Distrital", prop: true, ok: (uf) => uf === "df" },
   ];
   const SERIES = ["--s1", "--s2", "--s3", "--s4", "--s5", "--s6"];
 
@@ -397,20 +462,20 @@ footer a { color: var(--ink-2); }
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const title = (s) => String(s || "").toLowerCase().replace(/(^|[\s'-])(\p{L})/gu, (m, a, b) => a + b.toUpperCase())
     .replace(/\b(De|Da|Do|Das|Dos|E)\b/g, (w) => w.toLowerCase());
+  const ufName = (uf) => (uf === "br" ? "Brasil" : uf === "zz" ? "Exterior" : UFS[uf] || uf.toUpperCase());
   const store = {
     get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } },
     set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
   };
 
   const url = {
-    result(c, mun) {
-      const uf = mun === "br" ? "br" : UF;
-      const pre = mun && mun !== "br" ? UF + pad(mun, 5) : uf;
+    result(c, uf, mun) {
+      const pre = mun ? uf + pad(mun, 5) : uf;
       return `${BASE}/${c.ele}/dados/${uf}/${pre}-c${pad(c.cd, 4)}-e${pad(c.ele, 6)}-u.json`;
     },
-    ab: (c) => `${BASE}/${c.ele}/dados/${UF}/${UF}-e${pad(c.ele, 6)}-ab.json`,
+    ab: (c, uf) => `${BASE}/${c.ele}/dados/${uf}/${uf}-e${pad(c.ele, 6)}-ab.json`,
     cm: (c) => `${BASE}/${c.ele}/config/mun-e${pad(c.ele, 6)}-cm.json`,
-    foto: (c, sq) => `${BASE}/${c.ele}/fotos/${c.federal ? "br" : UF}/${sq}.jpeg`,
+    foto: (c, uf, sq) => `${BASE}/${c.ele}/fotos/${c.federal ? "br" : uf}/${sq}.jpeg`,
   };
 
   async function getJSON(u) {
@@ -420,35 +485,40 @@ footer a { color: var(--ink-2); }
   }
 
   // ---------- estado ----------
-  const saved = store.get("apuracao:prefs", {});
+  const saved = store.get("apuracao:prefs2", {});
   const state = {
-    cargo: CARGOS.find((c) => c.cd === saved.cargo) || CARGOS[2],
-    mun: saved.mun ?? null,       // null = estado; "br" = Brasil (só Presidente); "71072" = município
+    uf: saved.uf && (saved.uf === "br" || saved.uf === "zz" || saved.uf in UFS) ? saved.uf : "br",
+    cargo: CARGOS[0],
+    mun: saved.mun || null,       // código do município dentro da UF, ou null
     data: null,
-    ab: {},                       // por eleição
-    muns: {},                     // por eleição: código -> {nm, cdi}
-    lideres: {},                  // `${ele}:${cd}` -> {mun: {nm, n, p}}
+    ab: {},                       // `${ele}:${uf}` -> {código: registro}
+    muns: {},                     // ele -> uf -> {código: {nm}}
+    lideres: {},                  // `${ele}:${cd}:${uf}` -> {mun: {nome, p, votos}}
+    ufLead: null,                 // Presidente por UF (visão Brasil)
     paused: false,
     cycle: 0,
     countdown: REFRESH_S,
     showAll: false,
     query: "",
     sort: { k: "nm", dir: 1 },
+    usort: { k: "te", dir: -1 },
     mtQuery: "",
   };
-  const savePrefs = () => store.set("apuracao:prefs", { cargo: state.cargo.cd, mun: state.mun });
+  {
+    const c = CARGOS.find((x) => x.cd === saved.cargo);
+    if (c && c.ok(state.uf)) state.cargo = c;
+    if (state.uf === "br" || state.uf === "zz") state.mun = null;
+  }
+  const savePrefs = () => store.set("apuracao:prefs2", { uf: state.uf, cargo: state.cargo.cd, mun: state.mun });
 
   // ---------- leitura do arquivo unificado ----------
   function parseResult(d) {
     const carg = d.carg[0];
     const cands = [];
-    const parties = [];
     for (const a of carg.agr || []) {
       let agVotes = 0;
       for (const p of a.par || []) {
-        const pv = num(p.tvtn) + num(p.tvtl);
-        agVotes += pv;
-        parties.push({ sg: p.sg, n: p.n, nm: p.nm, nfed: p.nfed, nom: num(p.tvtn), leg: num(p.tvtl), total: pv });
+        agVotes += num(p.tvtn) + num(p.tvtl);
         for (const c of p.cand || []) {
           cands.push({
             n: c.n, sq: c.sqcand, nome: c.nmu || c.nm, nomeCompleto: c.nm,
@@ -465,7 +535,7 @@ footer a { color: var(--ink-2); }
       nm: a.nm, tp: a.tp, com: a.com, vag: num(a.vag), votos: a._votes,
     })).sort((x, y) => y.vag - x.vag || y.votos - x.votos);
     return {
-      raw: d, carg, cands, parties, groups,
+      raw: d, carg, cands, groups,
       vagas: num(carg.nv), qe: num(carg.qe),
       s: d.s || {}, e: d.e || {}, v: d.v || {},
       dg: d.dg, hg: d.hg, dt: d.dt, ht: d.ht, idg: d.idg,
@@ -474,7 +544,7 @@ footer a { color: var(--ink-2); }
   }
 
   // ---------- histórico local (evolução) ----------
-  const histKey = () => `apuracao:hist:${state.cargo.ele}:${state.cargo.cd}:${state.mun || UF}`;
+  const histKey = () => `apuracao:hist2:${state.cargo.ele}:${state.cargo.cd}:${state.uf}:${state.mun || ""}`;
   function pushHistory(r) {
     const h = store.get(histKey(), []);
     const p = pct(r.s.pstn || r.s.pst);
@@ -491,9 +561,9 @@ footer a { color: var(--ink-2); }
     store.set(histKey(), h);
     return h;
   }
-  // cor segue a entidade: atribuída uma vez e guardada
-  function colorFor(key) {
-    const k = `apuracao:colors:${state.cargo.ele}:${state.cargo.cd}`;
+  // cor segue a entidade: atribuída uma vez por cargo e guardada
+  function colorFor(key, cargo = state.cargo) {
+    const k = `apuracao:colors:${cargo.ele}:${cargo.cd}`;
     const map = store.get(k, {});
     if (!(key in map)) {
       const used = new Set(Object.values(map));
@@ -506,24 +576,29 @@ footer a { color: var(--ink-2); }
 
   // ---------- render: topo ----------
   function renderCargos() {
-    const el = $("#cargos");
-    el.innerHTML = CARGOS.map((c) =>
-      `<button type="button" data-cd="${c.cd}" aria-pressed="${c === state.cargo}">${c.nome}</button>`).join("");
+    $("#cargos").innerHTML = CARGOS.filter((c) => c.cd !== 8 || state.uf === "df").filter((c) => c.cd !== 7 || state.uf !== "df")
+      .map((c) => `<button type="button" data-cd="${c.cd}" aria-pressed="${c === state.cargo}" ${c.ok(state.uf) ? "" : 'disabled title="Escolha um estado"'}>${c.nome}</button>`).join("");
+    $("#hint").hidden = state.uf in UFS;
   }
+  function renderUfSelect() {
+    const opts = [["br", "Brasil"], ...Object.entries(UFS).sort((a, b) => a[1].localeCompare(b[1], "pt-BR")), ["zz", "Exterior"]];
+    $("#uf-select").innerHTML = opts.map(([k, v]) => `<option value="${k}" ${k === state.uf ? "selected" : ""}>${v}</option>`).join("");
+  }
+  function munName(cd) { return title(state.muns[state.cargo.ele]?.[state.uf]?.[cd]?.nm || cd); }
   function abrName() {
-    if (state.mun === "br") return "Brasil";
-    if (state.mun) return title(state.muns[state.cargo.ele]?.[state.mun]?.nm || state.mun) + " · SP";
-    return "São Paulo";
+    if (state.mun) return `${munName(state.mun)} · ${state.uf.toUpperCase()}`;
+    return ufName(state.uf);
   }
   function renderAbr() {
     $("#abr-label").textContent = abrName();
     $("#mun-clear").hidden = !state.mun;
-    const list = state.muns[state.cargo.ele];
-    if (list) {
-      const opts = Object.entries(list).sort((a, b) => a[1].nm.localeCompare(b[1].nm, "pt-BR"))
-        .map(([cd, m]) => `<option value="${esc(title(m.nm))}"></option>`);
-      if (state.cargo.federal) opts.unshift('<option value="Brasil"></option>');
-      $("#mun-list").innerHTML = opts.join("");
+    const hasMuns = state.uf !== "br";
+    $("#mun-input").hidden = !hasMuns;
+    $("#mun-input").placeholder = state.uf === "zz" ? "Filtrar cidade…" : "Filtrar município…";
+    const list = state.muns[state.cargo.ele]?.[state.uf];
+    if (list && hasMuns) {
+      $("#mun-list").innerHTML = Object.values(list).map((m) => title(m.nm)).sort((a, b) => a.localeCompare(b, "pt-BR"))
+        .map((n) => `<option value="${esc(n)}"></option>`).join("");
     }
   }
 
@@ -556,7 +631,7 @@ footer a { color: var(--ink-2); }
   }
 
   // ---------- render: ranking ----------
-  function statusChip(c, i, r) {
+  function statusChip(c) {
     const st = c.st.toLowerCase();
     if (c.dvt && /anulad|sub judice/i.test(c.dvt)) return `<span class="chip bad">${esc(c.dvt)}</span>`;
     if (st.includes("eleito") && !st.includes("não")) return `<span class="chip good">${esc(c.st)}</span>`;
@@ -566,7 +641,7 @@ footer a { color: var(--ink-2); }
     return "";
   }
 
-  function candRow(c, i, r, opts) {
+  function candRow(c, i, opts) {
     const inVaga = i < (opts.cut || 0);
     const w = Math.max(0, Math.min(100, (c.pct / opts.scale) * 100));
     const marker = opts.marker ? `<u style="left:${(opts.marker / opts.scale) * 100}%" title="${opts.marker}% dos válidos"></u>` : "";
@@ -574,8 +649,8 @@ footer a { color: var(--ink-2); }
     const grp = c.agrTp === "c" ? esc(title(c.agr)) : c.agrTp === "f" ? "Federação" : "";
     return `<li class="cand ${opts.cut && !inVaga ? "out" : ""}">
       <span class="pos">${i + 1}</span>
-      <img class="foto" alt="" loading="lazy" src="${url.foto(state.cargo, c.sq)}" onerror="this.style.visibility='hidden'">
-      <div class="who"><b>${esc(title(c.nome))}</b><span class="n">${esc(c.n)}</span>${statusChip(c, i, r)}
+      <img class="foto" alt="" loading="lazy" src="${url.foto(state.cargo, state.uf, c.sq)}" onerror="this.style.visibility='hidden'">
+      <div class="who"><b>${esc(title(c.nome))}</b><span class="n">${esc(c.n)}</span>${statusChip(c)}
         <small title="${esc(c.com || "")}">${esc(c.partido)}${grp ? " · " + grp : ""}${vices}</small></div>
       <div class="nums"><span class="p">${pf.format(c.pct)}%</span><span class="v">${nf.format(c.votos)} votos</span></div>
       <div class="meter"><i style="width:${w}%"></i>${marker}</div>
@@ -584,7 +659,7 @@ footer a { color: var(--ink-2); }
 
   function renderRanking(r) {
     const c = state.cargo;
-    $("#rank-title").textContent = c.prop ? `${c.nome} — partidos e candidatos` : `${c.nome}`;
+    $("#rank-title").textContent = `${c.prop ? `${c.nome} — partidos e candidatos` : c.nome} · ${abrName()}`;
     if (c.prop) return renderProportional(r);
     const top = r.cands[0]?.pct || 0;
     const majority = r.vagas === 1;
@@ -596,7 +671,7 @@ footer a { color: var(--ink-2); }
     let html = "";
     r.cands.forEach((cd, i) => {
       if (cut && i === cut) html += `<li class="cut">Linha de corte · ${r.vagas} vagas</li>`;
-      html += candRow(cd, i, r, { cut, scale, marker: majority ? 50 : 0 });
+      html += candRow(cd, i, { cut, scale, marker: majority ? 50 : 0 });
     });
     $("#rank-body").innerHTML = `<ol class="rank">${html}</ol>`;
   }
@@ -614,12 +689,12 @@ footer a { color: var(--ink-2); }
     const list = r.cands.filter((c) => !q || (c.nome + " " + c.nomeCompleto + " " + c.n + " " + c.partido).toLowerCase().includes(q));
     const shown = state.showAll || q ? list.slice(0, 400) : list.slice(0, r.vagas);
     const scale = Math.max(0.5, (r.cands[0]?.pct || 1) * 1.1);
-    const cand = shown.map((c) => candRow(c, r.cands.indexOf(c), r, { cut: r.vagas, scale })).join("");
+    const cand = shown.map((c) => candRow(c, r.cands.indexOf(c), { cut: r.vagas, scale })).join("");
     $("#rank-body").innerHTML = `
       <p class="eyebrow">Cadeiras projetadas pelo TSE (${totalSeats} de ${r.vagas})</p>
       <div style="overflow-x:auto"><table class="parties"><thead><tr><th>Partido / federação</th><th>Cadeiras</th><th class="r">Nº</th><th class="r">Votos</th></tr></thead><tbody>${rows}</tbody></table></div>
       <div class="more" style="margin:18px 0 4px">
-        <p class="eyebrow" style="margin:0;flex:1">Mais votados${q ? "" : state.showAll ? "" : ` · top ${r.vagas}`}</p>
+        <p class="eyebrow" style="margin:0;flex:1">Mais votados${q || state.showAll ? "" : ` · top ${r.vagas}`}</p>
         <input class="search" id="cand-search" placeholder="Buscar candidato, nº ou partido" value="${esc(state.query)}" aria-label="Buscar candidato">
       </div>
       <ol class="rank">${cand || '<li class="empty">Nenhum candidato encontrado.</li>'}</ol>
@@ -654,9 +729,9 @@ footer a { color: var(--ink-2); }
     const xs = hist.map((h) => h.p);
     let x0 = Math.min(...xs), x1 = Math.max(...xs);
     if (x1 - x0 < 1) { x0 = Math.max(0, x0 - 0.5); x1 = Math.min(100, x1 + 0.5); }
-    let ys = [];
+    const ys = [];
     hist.forEach((h) => keys.forEach((k) => { if (h.vals[k] != null) ys.push(h.vals[k]); }));
-    let y1 = Math.max(10, Math.ceil((Math.max(...ys) + 2) / 5) * 5), y0 = 0;
+    const y1 = Math.max(10, Math.ceil((Math.max(...ys) + 2) / 5) * 5), y0 = 0;
     const X = (v) => m.l + ((v - x0) / (x1 - x0)) * (W - m.l - m.r);
     const Y = (v) => H - m.b - ((v - y0) / (y1 - y0)) * (H - m.t - m.b);
     const yt = []; const step = y1 > 40 ? 10 : 5;
@@ -705,12 +780,67 @@ footer a { color: var(--ink-2); }
   }
   const hideTip = () => { tip.hidden = true; };
 
+  // ---------- visão Brasil: estados ----------
+  function ufRows() {
+    const ab = state.ab[`${CARGOS[0].ele}:br`] || {};
+    const lead = state.ufLead || {};
+    return Object.keys(TILES).map((uf) => {
+      const a = ab[uf] || {};
+      const l = lead[uf];
+      return {
+        uf, nm: ufName(uf), pst: pct(a.s?.pstn || a.s?.pst), te: num(a.e?.te), pc: pct(a.e?.pcn || a.e?.pc),
+        lider: l?.first ? `${title(l.first.nome)} (${l.first.partido})` : "", lp: l?.first?.pct || 0, leadKey: l?.first?.n,
+        vant: l?.first && l?.second ? l.first.pct - l.second.pct : 0, second: l?.second,
+      };
+    });
+  }
+  function renderEstados() {
+    const panel = $("#br-panel");
+    panel.hidden = state.uf !== "br";
+    if (panel.hidden) return;
+    const rows = ufRows();
+    const started = rows.filter((r) => r.pst > 0).length;
+    $("#br-sub").textContent = state.ufLead ? `27 estados + Exterior · ${started} já começaram · atualiza a cada minuto` : "Carregando os estados…";
+    const presidente = CARGOS[0];
+    $("#tiles").innerHTML = rows.map((r) => {
+      const [x, y] = TILES[r.uf];
+      const lead = r.leadKey && r.lp > 0 ? `--lead:${colorFor(r.leadKey, presidente)}` : "";
+      return `<button type="button" class="tile" data-uf="${r.uf}" style="grid-column:${x + 1};grid-row:${y + 1};${lead}" aria-label="${esc(r.nm)}: ${pf.format(r.pst)}% das seções${r.lider ? ", lidera " + esc(r.lider) : ""}">${r.uf.toUpperCase()}<small>${r.pst ? Math.round(r.pst) + "%" : "–"}</small></button>`;
+    }).join("");
+    const leaders = {};
+    rows.forEach((r) => { if (r.uf !== "zz" && r.leadKey && r.lp > 0) (leaders[r.leadKey] ||= { nome: r.lider, k: 0 }).k++; });
+    $("#tiles-legend").innerHTML = Object.entries(leaders).sort((a, b) => b[1].k - a[1].k)
+      .map(([n, v]) => `<li><i style="background:${colorFor(n, presidente)}"></i>${esc(v.nome)} · ${v.k} ${v.k === 1 ? "estado" : "estados"}</li>`).join("")
+      + `<li>número = % das seções totalizadas</li>`;
+    const { k, dir } = state.usort;
+    const sorted = rows.slice().sort((a, b) => (typeof a[k] === "string" ? a[k].localeCompare(b[k], "pt-BR") : a[k] - b[k]) * dir);
+    $("#ut tbody").innerHTML = sorted.map((r) => `<tr data-uf="${r.uf}">
+      <td><b>${r.uf.toUpperCase()}</b> ${esc(r.nm)}</td>
+      <td class="r"><span class="pbar"><i style="width:${Math.min(100, r.pst)}%"></i></span>${pf.format(r.pst)}%</td>
+      <td class="r">${nf.format(r.te)}</td>
+      <td class="r">${pf.format(r.pc)}%</td>
+      <td>${r.lider && r.lp > 0 ? `${esc(r.lider)} <small style="color:var(--muted)">${pf.format(r.lp)}%</small>` : '<span style="color:var(--muted)">–</span>'}</td>
+      <td class="r" style="white-space:nowrap">${r.vant ? `+${pf.format(r.vant)} p.p.` : "–"}</td></tr>`).join("");
+    document.querySelectorAll("#ut th").forEach((th) => th.setAttribute("aria-sort", th.dataset.k === k ? (dir > 0 ? "ascending" : "descending") : "none"));
+  }
+  async function loadUfLeads() {
+    const c = CARGOS[0];
+    const out = {};
+    await Promise.all(Object.keys(TILES).map(async (uf) => {
+      try {
+        const r = parseResult(await getJSON(url.result(c, uf)));
+        out[uf] = { first: r.cands[0], second: r.cands[1] };
+      } catch { /* estado ainda sem arquivo */ }
+    }));
+    state.ufLead = out;
+  }
+
   // ---------- municípios ----------
   function munRows() {
     const ele = state.cargo.ele;
-    const ab = state.ab[ele] || {};
-    const names = state.muns[ele] || {};
-    const lid = state.lideres[`${ele}:${state.cargo.cd}`] || {};
+    const ab = state.ab[`${ele}:${state.uf}`] || {};
+    const names = state.muns[ele]?.[state.uf] || {};
+    const lid = state.lideres[`${ele}:${state.cargo.cd}:${state.uf}`] || {};
     return Object.keys(names).map((cd) => {
       const a = ab[cd] || {};
       const l = lid[cd];
@@ -722,17 +852,19 @@ footer a { color: var(--ink-2); }
   }
   function seqColor(p) {
     if (p <= 0) return "var(--seq-0)";
-    const i = Math.min(6, 1 + Math.floor((p / 100) * 5.999));
-    return p >= 100 ? "var(--seq-6)" : `var(--seq-${Math.min(5, i)})`;
+    if (p >= 100) return "var(--seq-6)";
+    return `var(--seq-${Math.min(5, 1 + Math.floor((p / 100) * 5))})`;
   }
   function renderMunicipios() {
     const panel = $("#mun-panel");
-    if (state.mun === "br") { panel.hidden = true; return; }
-    panel.hidden = false;
+    panel.hidden = state.uf === "br";
+    if (panel.hidden) return;
     const rows = munRows();
-    if (!rows.length) return;
+    const zz = state.uf === "zz";
+    $("#mun-title").textContent = zz ? "Andamento por cidade no exterior" : `Andamento por município · ${ufName(state.uf)}`;
+    if (!rows.length) { $("#heat").innerHTML = ""; $("#mt tbody").innerHTML = ""; $("#mun-sub").textContent = "Carregando…"; return; }
     const done = rows.filter((r) => r.pst >= 100).length, started = rows.filter((r) => r.pst > 0).length;
-    $("#mun-sub").textContent = `${rows.length} municípios · ${nf.format(done)} com 100% · ${nf.format(started)} já começaram`;
+    $("#mun-sub").textContent = `${rows.length} ${zz ? "cidades" : "municípios"} · ${nf.format(done)} com 100% · ${nf.format(started)} já começaram`;
     const byName = rows.slice().sort((a, b) => a.nm.localeCompare(b.nm, "pt-BR"));
     $("#heat").innerHTML = byName.map((r) =>
       `<button type="button" data-mun="${r.cd}" class="${state.mun === r.cd ? "sel" : ""}" style="background:${seqColor(r.pst)}" aria-label="${esc(r.nm)}: ${pf.format(r.pst)}% das seções"></button>`).join("");
@@ -753,30 +885,43 @@ footer a { color: var(--ink-2); }
   function renderWins() {
     const panel = $("#wins-panel");
     const c = state.cargo;
-    panel.hidden = !!c.prop || state.mun === "br";
+    panel.hidden = !!c.prop || !!state.mun;
     if (panel.hidden) return;
-    const lid = state.lideres[`${c.ele}:${c.cd}`];
-    if (!lid) {
-      $("#wins-sub").textContent = "";
-      $("#wins-body").innerHTML = `<p class="empty" style="padding-top:0">Busca o resultado de cada um dos 645 municípios e conta em quantos cada candidato está na frente.</p>
-        <button class="btn primary" type="button" id="wins-load">Carregar líder por município</button>`;
-      return;
+    const body = $("#wins-body");
+    let counts = {}, total = 0, sub = "", unit = "municípios";
+    if (state.uf === "br") {
+      unit = "estados";
+      if (!state.ufLead) { $("#wins-sub").textContent = ""; body.innerHTML = '<p class="empty" style="padding-top:0">Carregando os estados…</p>'; return; }
+      for (const [uf, v] of Object.entries(state.ufLead)) {
+        if (uf === "zz" || !v.first || !v.first.votos) continue;
+        const n = `${title(v.first.nome)} (${v.first.partido})`;
+        counts[n] = (counts[n] || 0) + 1; total++;
+      }
+      sub = `${total} de 27 estados com votos`;
+    } else {
+      const lid = state.lideres[`${c.ele}:${c.cd}:${state.uf}`];
+      const nMuns = Object.keys(state.muns[c.ele]?.[state.uf] || {}).length;
+      if (!lid) {
+        $("#wins-sub").textContent = "";
+        body.innerHTML = `<p class="empty" style="padding-top:0">Busca o resultado de cada um dos ${nMuns || "…"} ${state.uf === "zz" ? "locais no exterior" : "municípios de " + ufName(state.uf)} e conta em quantos cada candidato está na frente.</p>
+          <button class="btn primary" type="button" id="wins-load">Carregar líder por município</button>`;
+        return;
+      }
+      for (const [k, v] of Object.entries(lid)) { if (k === "_at" || !v.votos) continue; counts[v.nome] = (counts[v.nome] || 0) + 1; total++; }
+      sub = `${total} municípios com votos · lido às ${lid._at || ""}`;
     }
-    const counts = {};
-    let total = 0;
-    for (const v of Object.values(lid)) { if (!v.votos) continue; counts[v.nome] = (counts[v.nome] || 0) + 1; total++; }
     const arr = Object.entries(counts).sort((a, b) => b[1] - a[1]);
     const max = arr[0]?.[1] || 1;
-    $("#wins-sub").textContent = `${total} municípios com votos · lido às ${lid._at || ""}`;
-    $("#wins-body").innerHTML = (arr.length
-      ? `<ul class="wins">${arr.map(([n, k]) => `<li><span>${esc(n)}</span><b>${k}</b><span class="bar"><i style="width:${(k / max) * 100}%"></i></span></li>`).join("")}</ul>`
-      : `<p class="empty">Nenhum município com votos totalizados ainda.</p>`) +
-      `<div class="more"><button class="btn" type="button" id="wins-load">Recarregar</button></div>`;
+    $("#wins-sub").textContent = sub;
+    body.innerHTML = (arr.length
+      ? `<ul class="wins">${arr.map(([n, k]) => `<li><span>${esc(n)}</span><b>${k} ${unit}</b><span class="bar"><i style="width:${(k / max) * 100}%"></i></span></li>`).join("")}</ul>`
+      : `<p class="empty">Nenhum ${unit === "estados" ? "estado" : "município"} com votos totalizados ainda.</p>`) +
+      (state.uf === "br" ? "" : `<div class="more"><button class="btn" type="button" id="wins-load">Recarregar</button></div>`);
   }
 
   async function loadLideres() {
-    const c = state.cargo, key = `${c.ele}:${c.cd}`;
-    const codes = Object.keys(state.muns[c.ele] || {});
+    const c = state.cargo, uf = state.uf, key = `${c.ele}:${c.cd}:${uf}`;
+    const codes = Object.keys(state.muns[c.ele]?.[uf] || {});
     if (!codes.length) return;
     const btn = $("#wins-load"); if (btn) { btn.disabled = true; btn.textContent = "Carregando 0 de " + codes.length + "…"; }
     const out = {}; let i = 0, done = 0;
@@ -784,7 +929,7 @@ footer a { color: var(--ink-2); }
       while (i < codes.length) {
         const cd = codes[i++];
         try {
-          const r = parseResult(await getJSON(url.result(c, cd)));
+          const r = parseResult(await getJSON(url.result(c, uf, cd)));
           const top = r.cands[0];
           out[cd] = top ? { nome: `${title(top.nome)} (${top.partido})`, p: top.pct, votos: top.votos } : { nome: "", p: 0, votos: 0 };
         } catch { /* município sem arquivo ainda */ }
@@ -795,42 +940,45 @@ footer a { color: var(--ink-2); }
     await Promise.all(Array.from({ length: 8 }, worker));
     out._at = new Date().toLocaleTimeString("pt-BR");
     state.lideres[key] = out;
-    if (state.cargo === c) { renderWins(); renderMunicipios(); }
+    if (state.cargo === c && state.uf === uf) { renderWins(); renderMunicipios(); }
   }
 
   // ---------- ciclo de atualização ----------
   async function ensureMuns(c) {
     if (state.muns[c.ele]) return;
     const cm = await getJSON(url.cm(c));
-    const sp = cm.abr.find((a) => a.cd.toLowerCase() === UF);
-    const map = {};
-    for (const m of sp?.mu || []) map[m.cd] = { nm: m.nm, cdi: m.cdi };
-    state.muns[c.ele] = map;
+    const all = {};
+    for (const a of cm.abr || []) {
+      const map = {};
+      for (const m of a.mu || []) map[m.cd] = { nm: m.nm };
+      all[a.cd.toLowerCase()] = map;
+    }
+    state.muns[c.ele] = all;
   }
-  async function loadAb(c) {
-    const ab = await getJSON(url.ab(c));
+  async function loadAb(c, uf) {
+    const ab = await getJSON(url.ab(c, uf));
     const map = {};
-    for (const a of ab.abr || []) if (a.tpabr === "mun") map[a.cdabr] = a;
-    state.ab[c.ele] = map;
+    for (const a of ab.abr || []) map[a.cdabr] = a;
+    state.ab[`${c.ele}:${uf}`] = map;
   }
 
   let loading = false;
   async function refresh(force) {
     if (loading) return;
     loading = true;
-    const c = state.cargo, mun = state.mun;
+    const c = state.cargo, uf = state.uf, mun = state.mun;
     const live = $("#live");
     try {
-      const jobs = [getJSON(url.result(c, mun))];
-      const needAb = mun !== "br" && (force || !state.ab[c.ele] || state.cycle % AB_EVERY === 0);
-      jobs.push(ensureMuns(c).catch(() => {}));
-      if (needAb) jobs.push(loadAb(c).catch(() => {}));
+      const slow = force || state.cycle % AB_EVERY === 0;
+      const jobs = [getJSON(url.result(c, uf, mun)), ensureMuns(c).catch(() => {})];
+      if (slow || !state.ab[`${c.ele}:${uf}`]) jobs.push(loadAb(c, uf).catch(() => {}));
+      if (uf === "br" && (slow || !state.ufLead)) jobs.push(loadUfLeads().catch(() => {}));
       const [d] = await Promise.all(jobs);
-      if (c !== state.cargo || mun !== state.mun) return; // usuário trocou no meio
+      if (c !== state.cargo || uf !== state.uf || mun !== state.mun) return; // usuário trocou no meio
       const r = parseResult(d);
       state.data = r;
       const hist = pushHistory(r);
-      renderAbr(); renderStatus(r); renderRanking(r); renderEvolution(r, hist); renderWins(); renderMunicipios();
+      renderAbr(); renderStatus(r); renderRanking(r); renderEvolution(r, hist); renderWins(); renderEstados(); renderMunicipios();
       $("#banner").hidden = true;
       live.classList.remove("err");
     } catch (err) {
@@ -851,8 +999,7 @@ footer a { color: var(--ink-2); }
   }
 
   function tick() {
-    const live = $("#live");
-    live.classList.toggle("paused", state.paused);
+    $("#live").classList.toggle("paused", state.paused);
     const at = state.data ? `TSE ${state.data.hg}` : "";
     $("#live-text").textContent = state.paused ? `Pausado · ${at}` : `Ao vivo · ${at} · próxima em ${state.countdown}s`;
   }
@@ -863,33 +1010,47 @@ footer a { color: var(--ink-2); }
   }, 1000);
 
   // ---------- eventos ----------
+  function go() {
+    savePrefs(); renderCargos(); renderUfSelect(); resetPanels(); refresh(true);
+    window.scrollTo({ top: 0, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  }
   function setCargo(cd) {
     const c = CARGOS.find((x) => x.cd === cd);
-    if (!c || c === state.cargo) return;
+    if (!c || c === state.cargo || !c.ok(state.uf)) return;
     state.cargo = c; state.showAll = false; state.query = "";
-    if (state.mun === "br" && !c.federal) state.mun = null;
-    savePrefs(); renderCargos(); resetPanels(); refresh(true);
+    go();
+  }
+  function setUf(uf) {
+    if (uf === state.uf && !state.mun) return;
+    state.uf = uf; state.mun = null; state.mtQuery = ""; $("#mt-search").value = "";
+    if (!state.cargo.ok(uf)) {
+      // troca de UF com cargo estadual: mantém o cargo equivalente (Estadual <-> Distrital) ou volta a Presidente
+      const eq = state.cargo.cd === 7 || state.cargo.cd === 8 ? CARGOS.find((c) => (c.cd === 7 || c.cd === 8) && c.ok(uf)) : null;
+      state.cargo = eq || CARGOS[0];
+    }
+    go();
   }
   function setMun(mun) {
     if (mun === state.mun) return;
-    state.mun = mun; savePrefs();
+    state.mun = mun;
     $("#mun-input").value = "";
-    resetPanels(); refresh(true);
-    window.scrollTo({ top: 0, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+    go();
   }
   function resetPanels() {
     $("#rank-body").innerHTML = '<p class="empty">Carregando resultados…</p>';
     $("#evo").innerHTML = ""; $("#evo-legend").innerHTML = "";
     $("#abr-label").textContent = abrName();
     $("#mun-clear").hidden = !state.mun;
+    $("#br-panel").hidden = state.uf !== "br";
+    $("#mun-panel").hidden = state.uf === "br";
   }
 
-  $("#cargos").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) setCargo(Number(b.dataset.cd)); });
+  $("#cargos").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b && !b.disabled) setCargo(Number(b.dataset.cd)); });
+  $("#uf-select").addEventListener("change", (e) => setUf(e.target.value));
   $("#mun-input").addEventListener("change", (e) => {
     const v = e.target.value.trim().toLowerCase();
     if (!v) return;
-    if (v === "brasil" && state.cargo.federal) return setMun("br");
-    const list = state.muns[state.cargo.ele] || {};
+    const list = state.muns[state.cargo.ele]?.[state.uf] || {};
     const hit = Object.entries(list).find(([, m]) => m.nm.toLowerCase() === v)
       || Object.entries(list).find(([, m]) => m.nm.toLowerCase().startsWith(v));
     if (hit) setMun(hit[0]);
@@ -903,6 +1064,8 @@ footer a { color: var(--ink-2); }
   document.addEventListener("click", (e) => {
     const t = e.target.closest("[data-mun]");
     if (t && (t.closest("#heat") || t.closest("#mt"))) setMun(t.dataset.mun);
+    const u = e.target.closest("[data-uf]");
+    if (u && (u.closest("#tiles") || u.closest("#ut"))) setUf(u.dataset.uf);
     if (e.target.id === "wins-load") loadLideres();
   });
   $("#heat").addEventListener("pointerover", (e) => {
@@ -911,11 +1074,26 @@ footer a { color: var(--ink-2); }
     showTip(e, `<b>${esc(r.nm)}</b><div class="row"><span>Seções totalizadas</span><b>${pf.format(r.pst)}%</b></div><div class="row"><span>Eleitorado</span><b>${nf.format(r.te)}</b></div>${r.lider ? `<div class="row"><span>Líder</span><b>${esc(r.lider)}</b></div>` : ""}`);
   });
   $("#heat").addEventListener("pointerout", hideTip);
+  $("#tiles").addEventListener("pointerover", (e) => {
+    const b = e.target.closest("[data-uf]"); if (!b) return;
+    const r = ufRows().find((x) => x.uf === b.dataset.uf); if (!r) return;
+    showTip(e, `<b>${esc(r.nm)}</b><div class="row"><span>Seções totalizadas</span><b>${pf.format(r.pst)}%</b></div>` +
+      (r.lider && r.lp > 0 ? `<div class="row"><span>${esc(r.lider)}</span><b>${pf.format(r.lp)}%</b></div>` : "") +
+      (r.second && r.lp > 0 ? `<div class="row"><span>${esc(title(r.second.nome))} (${esc(r.second.partido)})</span><b>${pf.format(r.second.pct)}%</b></div>` : "") +
+      `<div style="opacity:.75;margin-top:4px">Clique para abrir o estado</div>`);
+  });
+  $("#tiles").addEventListener("pointerout", hideTip);
   $("#mt thead").addEventListener("click", (e) => {
     const th = e.target.closest("th"); if (!th) return;
     const k = th.dataset.k;
     state.sort = state.sort.k === k ? { k, dir: -state.sort.dir } : { k, dir: k === "nm" || k === "lider" ? 1 : -1 };
     renderMunicipios();
+  });
+  $("#ut thead").addEventListener("click", (e) => {
+    const th = e.target.closest("th"); if (!th) return;
+    const k = th.dataset.k;
+    state.usort = state.usort.k === k ? { k, dir: -state.usort.dir } : { k, dir: k === "nm" || k === "lider" ? 1 : -1 };
+    renderEstados();
   });
   $("#mt-search").addEventListener("input", (e) => { state.mtQuery = e.target.value; renderMunicipios(); });
   let rz;
@@ -923,6 +1101,7 @@ footer a { color: var(--ink-2); }
   document.addEventListener("visibilitychange", () => { if (!document.hidden && !state.paused) refresh(); });
 
   renderCargos();
+  renderUfSelect();
   resetPanels();
   refresh(true);
 })();
